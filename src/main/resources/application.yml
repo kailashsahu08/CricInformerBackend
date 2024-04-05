@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: CricInformer
+  profiles:
+    active:
+      - ${ENV:dev}
+server:
+  port: 9595

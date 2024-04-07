@@ -1,6 +1,6 @@
 package com.cric.api.service;
-
 import com.cric.api.entity.Match;
+import com.cric.api.entity.MatchStatus;
 import com.cric.api.repository.MatchRepo;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -24,50 +24,56 @@ public class MatchServiceImpl implements IMatchService {
     @Override
     public List<Match> getLiveMatches() {
         List<Match> matches = new ArrayList<>();
-        try {
-            String url = "https://www.cricbuzz.com/cricket-match/live-scores";
+        try{
+            String url = "https://www.espncricinfo.com/live-cricket-score";
             Document document = Jsoup.connect(url).get();
-            Elements liveScoreElements = document.select("div.cb-mtch-lst.cb-tms-itm");
-            for (Element match : liveScoreElements) {
-                HashMap<String, String> liveMatchInfo = new LinkedHashMap<>();
-                String teamsHeading = match.select("h3.cb-lv-scr-mtch-hdr").select("a").text();
-                String matchNumberVenue = match.select("span").text();
-                Elements matchBatTeamInfo = match.select("div.cb-hmscg-bat-txt");
-                String battingTeam = matchBatTeamInfo.select("div.cb-hmscg-tm-nm").text();
-                String score = matchBatTeamInfo.select("div.cb-hmscg-tm-nm+div").text();
-                Elements bowlTeamInfo = match.select("div.cb-hmscg-bwl-txt");
-                String bowlTeam = bowlTeamInfo.select("div.cb-hmscg-tm-nm").text();
-                String bowlTeamScore = bowlTeamInfo.select("div.cb-hmscg-tm-nm+div").text();
-                String textLive = match.select("div.cb-text-live").text();
-                String textComplete = match.select("div.cb-text-complete").text();
-                //getting match link
-                String matchLink = match.select("a.cb-lv-scrs-well.cb-lv-scrs-well-live").attr("href").toString();
+            Elements matchData = document.select("div[class=\"ds-px-4 ds-py-3\"]");
+            matchData.forEach(oneMatchData ->{
+                Match match = new Match();
+                String matchStatus = oneMatchData.select("span[class=\"ds-text-tight-xs ds-font-bold ds-uppercase ds-leading-5\"]").text();
+                match.setStatus(matchStatus.equalsIgnoreCase("live") ||matchStatus.indexOf("STUMPS")>0?MatchStatus.LIVE:MatchStatus.COMPLETED);
+                Elements matchPrev = oneMatchData.select("div[class=\"ds-text-tight-xs ds-truncate ds-text-typo-mid3\"]");
+                String matchPreview  = matchPrev.get(0).child(0).text();//not change index  matchPrev.get(0).text() +
+                match.setMatchNumberVenue(matchPreview);
 
-                Match match1 = new Match();
-                match1.setTeamHeading(teamsHeading);
-                match1.setMatchNumberVenue(matchNumberVenue);
-                match1.setBattingTeam(battingTeam);
-                match1.setBattingTeamScore(score);
-                match1.setBowlingTeam(bowlTeam);
-                match1.setBowlingTeamScore(bowlTeamScore);
-                match1.setLiveText(textLive);
-                match1.setMatchLink(matchLink);
-                match1.setTextComplete(textComplete);
-                match1.setMatchStatus();
+                Elements team = oneMatchData.select("div[class=\"ds-flex ds-flex-col ds-mt-2 ds-mb-2\"]>*");
+                Elements eachBatingTeam = team.get(0).children();
+                String BattingTeamName = "";
+                String BattingTeamScore = "";
+                if(eachBatingTeam.size()>1){
+                    BattingTeamName = eachBatingTeam.get(0).select("p").text();
+                    BattingTeamScore = eachBatingTeam.get(1).select("strong").text() + eachBatingTeam.get(1).select("span").text();
+                }
+                else{
+                    BattingTeamName = eachBatingTeam.get(0).select("p").text();
+                }
+                match.setBattingTeam(BattingTeamName);
+                match.setBattingTeamScore(BattingTeamScore);
+                Elements eachBowlingTeam = team.get(1).children();
+                String BowlingTeamName = "";
+                String BowlingTeamScore = "";
+                if(eachBowlingTeam.size()>1){
+                    BowlingTeamName = eachBowlingTeam.get(0).select("p").text();
+                    BowlingTeamScore = eachBowlingTeam.get(1).select("strong").text() + eachBowlingTeam.get(1).select("span").text();
+                }
+                else{
+                    BowlingTeamName = eachBowlingTeam.get(0).select("p").text();
+                }
+                match.setBowlingTeam(BowlingTeamName);
+                match.setBowlingTeamScore(BowlingTeamScore);
+                String desc = oneMatchData.select("p[class=\"ds-text-tight-s ds-font-medium ds-truncate ds-text-typo\"]>span").text();
+                if(match.getStatus()==MatchStatus.LIVE)
+                    match.setLiveText(desc);
+                else {
+                    matchRepo.save(match);
+                    match.setTextComplete(desc);
+                }
+                match.setTeamHeading(BattingTeamName.toUpperCase()+" VS "+BowlingTeamName.toUpperCase());
+                matches.add(match);
+            });
 
-
-                matches.add(match1);
-
-//                update the match in database
-
-
-                updateMatch(match1);
-
-
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (Exception e) {
+        }
+        catch (Exception e){
             e.printStackTrace();
         }
         return matches;
@@ -87,16 +93,10 @@ public class MatchServiceImpl implements IMatchService {
     @Override
     public List<List<String>> getPointTable() {
         List<List<String>> pointTable = new ArrayList<>();
-        String tableURL = "https://www.cricbuzz.com/cricket-series/6732/icc-cricket-world-cup-2023/points-table";
+        String tableURL = "https://www.cricbuzz.com/cricket-series/7607/indian-premier-league-2024/points-table";
         try {
             Document document = Jsoup.connect(tableURL).get();
             Elements table = document.select("table.cb-srs-pnts");
-            Elements tableHeads = table.select("thead>tr>*");
-            List<String> headers = new ArrayList<>();
-            tableHeads.forEach(element -> {
-                headers.add(element.text());
-            });
-            pointTable.add(headers);
             Elements bodyTrs = table.select("tbody>*");
             bodyTrs.forEach(tr -> {
                 List<String> points = new ArrayList<>();
@@ -109,11 +109,8 @@ public class MatchServiceImpl implements IMatchService {
                             points.add(td.text());
                         }
                     });
-//                    System.out.println(points);
                     pointTable.add(points);
                 }
-
-
             });
 
             System.out.println(pointTable);
@@ -121,5 +118,16 @@ public class MatchServiceImpl implements IMatchService {
             e.printStackTrace();
         }
         return pointTable;
+    }
+
+    @Override
+    public String clearDataBaseRows() {
+        try {
+            this.matchRepo.deleteAll();
+            return "true";
+        }
+        catch (Exception e){
+            return "false";
+        }
     }
 }

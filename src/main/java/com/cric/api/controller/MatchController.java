@@ -2,7 +2,6 @@ package com.cric.api.controller;
 
 import com.cric.api.entity.Match;
 import com.cric.api.service.IMatchService;
-import com.cric.api.service.MatchServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,8 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/match")
-@CrossOrigin(origins = "*")
+@RequestMapping("/matches")
+@CrossOrigin(origins = "http://localhost:5173/")
 public class MatchController {
     @Autowired
     private IMatchService matchService;
@@ -33,4 +32,9 @@ public class MatchController {
     public  ResponseEntity<?> getPointTable(){
         return new   ResponseEntity<>(this.matchService.getPointTable(),HttpStatus.OK);
     }
+    @GetMapping("/clear-db")
+    public String clearDbTable(){
+        return this.matchService.clearDataBaseRows();
+    }
+
 }

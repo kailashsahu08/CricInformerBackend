@@ -13,28 +13,28 @@ public class Match {
     @SequenceGenerator(name = "match_sequence", sequenceName = "MATCH_SEQ", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "match_sequence")
     private int matchId;
-    @Column(length = 100)
+    @Column(length = 150)
     private String teamHeading;
-    @Column(length = 100)
+    @Column(length = 300)
     private  String matchNumberVenue;
-    @Column(length = 100)
+    @Column(length = 150)
     private  String battingTeam;
-    @Column(length = 100)
+    @Column(length = 150)
     private  String battingTeamScore;
-    @Column(length = 100)
+    @Column(length = 150)
     private  String bowlingTeam;
-    @Column(length = 100)
+    @Column(length = 150)
     private  String bowlingTeamScore;
-    @Column(length = 100)
+    @Column(length = 150)
     private  String liveText;
-    @Column(length = 100)
+    @Column(length = 150)
     private  String matchLink;
-    @Column(length = 100)
+    @Column(length = 150)
     private  String textComplete;
     @Enumerated
     private MatchStatus status;
     @Temporal(TemporalType.TIMESTAMP)
-    private Date date ;
+    private Date date =new Date();
 
     public Match() {
     }

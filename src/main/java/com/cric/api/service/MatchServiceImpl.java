@@ -31,7 +31,7 @@ public class MatchServiceImpl implements IMatchService {
             matchData.forEach(oneMatchData ->{
                 Match match = new Match();
                 String matchStatus = oneMatchData.select("span[class=\"ds-text-tight-xs ds-font-bold ds-uppercase ds-leading-5\"]").text();
-                match.setStatus(matchStatus.equalsIgnoreCase("live") ||matchStatus.indexOf("STUMPS")>0?MatchStatus.LIVE:MatchStatus.COMPLETED);
+                match.setStatus(matchStatus.equalsIgnoreCase("RESULT") ?MatchStatus.COMPLETED:MatchStatus.LIVE);
                 Elements matchPrev = oneMatchData.select("div[class=\"ds-text-tight-xs ds-truncate ds-text-typo-mid3\"]");
                 String matchPreview  = matchPrev.get(0).child(0).text();//not change index  matchPrev.get(0).text() +
                 match.setMatchNumberVenue(matchPreview);
